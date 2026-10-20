@@ -14,18 +14,34 @@ with open("policies_clean.json", "r", encoding="utf-8") as f:
 
 # print(type(data[0]["text"]))
 
-sample = data[:50]
+# 샘플로 테스트 잠깐
+# sample = data[:50]
 
-texts = [d["text"] for d in sample]
-metadatas = [d["metadata"] for d in sample]
-ids = [d["id"] for d in sample]
+# texts = [d["text"] for d in sample]
+# metadatas = [d["metadata"] for d in sample]
+# ids = [d["id"] for d in sample]
 
-vectorstore.add_texts(
-    texts = texts,
-    metadatas = metadatas,
-    ids = ids
-)
+# vectorstore.add_texts(
+#     texts = texts,
+#     metadatas = metadatas,
+#     ids = ids
+# )
 
-# print(vectorstore._collection.count())
-print(vectorstore.similarity_search("창업 지원", k=3))
+BATCH = 100
+
+for i in range(0, len(data), BATCH):
+    batch = data[i:i + BATCH]                   # data[0:100] 부터 시작
+    vectorstore.add_texts(
+        texts = [d["text"] for d in batch],
+        metadatas = [d["metadata"] for d in batch],
+        ids = [d["id"] for d in batch]
+    )
+
+print(f"DB 저장 완료 ! 저장 건수 -> {vectorstore._collection.count()}")
+
+results = vectorstore.similarity_search("나이는 30대초반이고 취업준비생이에요.", k=3)
+
+for doc in results:
+    print(doc.metadata['plcy_name'])
+
 
