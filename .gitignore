@@ -1,5 +1,7 @@
 .env
 .venv
 store/
-policies_clean.json
+connection.txt
+test.txt
 policies_raw.json
+policies_clean.json
