@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, TypedDict
 
 from langgraph.graph import StateGraph
 
