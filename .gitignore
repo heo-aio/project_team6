@@ -1,2 +1,5 @@
 .env
 .venv
+store/
+policies_clean.json
+policies_raw.json
