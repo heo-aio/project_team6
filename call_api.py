@@ -13,9 +13,14 @@ res = requests.get(url, params=params)
 # print(f"status : {res.status_code}")
 
 """
-# plcyNm : 정책명, plcyKywdNm : 정책키워드, plcyExplnCn : 정책설명, plcySprtCn : 정책지원내용
-# bizPrdBgngYmd : 시작일자, bizPrdEndYmd : 종료일자
-# aplyUrlAddr : 신청URL, refUrlAddr1 : 참고URL, aplyYmd : 신청기간, plcyAplyMthdCn : 신청방법
+plcyNo : 정책고유 ID
+plcyNm : 정책명, plcyKywdNm : 정책키워드, plcyExplnCn : 정책설명, plcySprtCn : 정책지원내용
+bizPrdBgngYmd : 시작일자, bizPrdEndYmd : 종료일자
+aplyUrlAddr : 신청URL, refUrlAddr1 : 참고URL, aplyYmd : 신청기간, plcyAplyMthdCn : 신청방법
+sprtTrgtMinAge, sprtTrgtMaxAge, sprtTrgtAgeLmtYn -> 나이제한관련
+zipCd : 정책거주지역코드
+lclsfNm : 정책대분류명, mclsfNm : 중분류명
+sprvsnInstCdNm : 주관 기관 코드
 """
 
 data = res.json() # 데이터 원본
