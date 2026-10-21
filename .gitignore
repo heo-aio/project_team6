@@ -5,3 +5,4 @@ connection.txt
 test.txt
 policies_raw.json
 policies_clean.json
+__pycache__/
