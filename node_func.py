@@ -1,5 +1,9 @@
 from prompts import GraphState, PromptManager, UserProfileState
+from llama_index.core import VectorStoreIndex
+from langchain_chroma import Chroma
+from langchain_ollama import OllamaEmbeddings
 from llm_config import init_llm_settings
+import chromadb
 
 # 1. LLM 및 임베딩 전역 초기화
 llm, embed_model = init_llm_settings()
@@ -14,18 +18,17 @@ def retrieve_node(state: GraphState) -> dict:
     location = state.get("location", "")
     age = state.get("age", None)
     
-    # TODO: 실제 LlamaIndex QueryEngine 연동부
-    # query_engine = index.as_query_engine()
-    # response = query_engine.query(f"{location} 청년 정책 {question}")
-    # retrieved_context = response.source_nodes
+    embed_fn = OllamaEmbeddings(base_url="http://localhost:11434", model="bge-m3:latest")
+    client = chromadb.PersistentClient(path="./store")
+    vectorstore = Chroma(client=client, collection_name="policies_data", embedding_function=embed_fn)
     
-    # 검수용 더미 데이터
-    dummy_context = [
-        f"[참고 정책 문서] {location} 거주 청년(만 {state.get('age', '미지정')}세) 대상 지원 내용... 질문: {question}"
-    ]
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    docs = retriever.invoke(f"{state.get('location')} 청년 정책 {state.get('question')}")
+    
+    retrieved_context = [doc.page_content for doc in docs]
     
     # GraphState의 context 필드 갱신
-    return {"context": dummy_context}
+    return {"context": retrieved_context}
 
 
 def generate_node(state: GraphState) -> dict:
@@ -55,6 +58,18 @@ def generate_node(state: GraphState) -> dict:
         context_str=context_str,
         query_str=question
     )
+
+    final_prompt += """
+        - 답변은 반드시 자연스러운 한국어로만 작성하세요. 
+        - 중국어, 영어 등 다른 언어를 절대 섞어서 출력하지 마세요.
+        - 코드 형태의 특수문자(\n 등)를 노출하지 말고 실제 줄바꿈을 사용하세요.
+        
+        \n\n[AI 답변]: 
+    """
+
+    #print("=== [DEBUG] Final Prompt ===")
+    #print(final_prompt)
+    #print("============================")
 
     """
     42~57 대체
