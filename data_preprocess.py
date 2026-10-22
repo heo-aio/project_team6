@@ -41,23 +41,31 @@ def build_metadata(p):
         "plcy_no": p.get("plcyNo", "").strip(),
         "plcy_name": p.get("plcyNm", "").strip(),
         "min_age": int(p.get("sprtTrgtMinAge") or 0),
-        "max_age": int(p.get("sprtTrgtMaxAge") or 0),
+        "max_age": int(p.get("sprtTrgtMaxAge") or 0) or 999, # 나이 범위 0-0일때 max를 999까지로 처리
         "age_limit_yn": p.get("sprtTrgtAgeLmtYn", ""),
         "apply_period": p.get("aplyYmd", "").strip(),
         "apply_url": p.get("aplyUrlAddr", "").strip(),
         "ref_url": p.get("refUrlAddr1", "").strip(),
-        "region": p.get("zipCd", "").strip(),
+        "region": [c.strip() for c in p.get("zipCd", "").split(",") if c.strip()]
     }
 
-result = []
-for p in policies:
-    result.append({
-        "id" : p["plcyNo"],
-        "text" : build_text(p),
-        "metadata" : build_metadata(p)
-    })
+# 빈 값이 없는지 테스트
+# bad = []
+# for p in policies:
+#     md = build_metadata(p)
+#     if not md["region"] or "" in md["region"]:
+#         bad.append(p["plcyNo"])
+# print(len(bad))   # 0이면 빈 값이 없다는 뜻
 
-# 저장
-with open("policies_clean.json", "w", encoding="utf-8") as f:
-    json.dump(result, f, ensure_ascii=False, indent=2)
-print(f"전처리 완료: {len(result)}건")
+# result = []
+# for p in policies:
+#     result.append({
+#         "id" : p["plcyNo"],
+#         "text" : build_text(p),
+#         "metadata" : build_metadata(p)
+#     })
+#
+# # 저장
+# with open("policies_clean.json", "w", encoding="utf-8") as f:
+#     json.dump(result, f, ensure_ascii=False, indent=2)
+# print(f"전처리 완료: {len(result)}건")
