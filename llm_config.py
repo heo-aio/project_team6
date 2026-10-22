@@ -17,7 +17,7 @@ def check_ollama_status(base_url: str = "http://localhost:11434") -> bool:
 
 def get_optimized_ollama_llm(
     model_name: str = "qwen2.5",
-    base_url: str = "http://localhost:11434",
+    base_url: str = "http://127.0.0.1:11434",
     num_ctx: int = 4096,
     temperature: float = 0.1,
 ) -> Ollama:
