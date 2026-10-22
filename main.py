@@ -5,7 +5,9 @@ from langgraph.constants import END
 from pydantic import BaseModel
 
 #from common import get_state
-from prompts import get_graph
+#from prompts import get_graph
+from prompts2 import get_state
+#from 'prompts(수정본)' import get_state
 from node_func import *
 
 class ChatRequest(BaseModel):
@@ -20,7 +22,7 @@ app = FastAPI()
 app.mount("/view", StaticFiles(directory="view"))
 
 # LangGraph State
-wf = get_graph()
+wf = get_state()
 
 # node 등록
 wf.add_node('evaluate', evaluate_node)
