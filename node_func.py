@@ -1,10 +1,12 @@
 #from prompts import GraphState, PromptManager, UserProfileState
-from prompts2 import State, PromptManager
 #from llama_index.core import VectorStoreIndex
 from langchain_chroma import Chroma
 from langchain_ollama import OllamaEmbeddings
-from llm_config import init_llm_settings
 import chromadb
+
+from prompts2 import State, PromptManager
+from llm_config import init_llm_settings
+from db_history import get_recent_history
 
 # 1. LLM 및 임베딩 전역 초기화
 llm, embed_model = init_llm_settings()
@@ -23,7 +25,7 @@ def retrieve_node(state: State) -> dict:
     client = chromadb.PersistentClient(path="./store")
     vectorstore = Chroma(client=client, collection_name="policies_data", embedding_function=embed_fn)
     
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
     docs = retriever.invoke(f"{state.get('location')} 청년 정책 {state.get('question')}")
     
     retrieved_context = [doc.page_content for doc in docs]
@@ -38,12 +40,15 @@ def generate_node(state: State) -> dict:
     - GraphState의 모든 필드를 PromptManager에 연동하여 최종 답변을 생성합니다.
     """
     print("--- [Node] LLM 답변 생성 시작 ---")
+    user_id = state.get("user_id", "user_01")
     question = state.get("question", "")
     context = state.get("context", [])
     age = state.get("age", None)
     location = state.get("location", None)
 
     user_extra_info = state.get("data", "없음")
+
+    chat_history = get_recent_history(user_id=user_id, limit=6)
     
     # 1. UserProfileState 및 PromptManager 연동
     pm = PromptManager(state=state)
@@ -59,10 +64,16 @@ def generate_node(state: State) -> dict:
     )
 
     final_prompt += """
-        - 답변은 반드시 자연스러운 한국어로만 작성하세요. 
+        [이전 대화 기록]
+        {chat_history}
+
+        [출력 규칙]
+        - 답변은 반드시 자연스러운 한국어로만 작성하세요.
         - 중국어, 영어 등 다른 언어를 절대 섞어서 출력하지 마세요.
-        - 마크다운 기호나 별표(*)를 사용하지 말고, 일반 문장 형태로 작성하세요.
-        - 줄바꿈이 필요할 때는 "\n" 대신 실제 엔터(줄바꿈)를 치세요.
+        - 이전 대화 내용이 있다면 그 맥락을 이어서 답변하세요.
+        - 역슬래시 n(\\n) 문자를 텍스트에 직접 쓰지 말고 실제 엔터(줄바꿈)를 치세요.
+        - 똑같은 인사말이나 문장을 여러 번 반복하지 마세요.
+        - 이전 대화기록이 필요한 경우 적극적으로 활용하세요.
         
         \n\n[AI 답변]: 
     """

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>청년 정책 AI 어드바이저</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Noto Sans KR Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        #sidebar { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen w-screen flex overflow-hidden relative">
+
+    <!-- 📌 사이드바 배경 오버레이 (사이드바 열렸을 때 클릭하면 닫힘) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-20 hidden transition-opacity"></div>
+
+    <!-- 📌 좌측 사이드바 (슬라이드 오버 방식: 화면을 밀지 않고 위에 떠서 열림) -->
+    <aside id="sidebar" class="fixed top-0 left-0 w-80 h-full bg-white border-r border-slate-200 flex flex-col justify-between z-30 -translate-x-full shadow-2xl overflow-hidden">
+        <div class="p-5 overflow-y-auto space-y-4 flex-1">
+            <!-- 사이드바 타이틀 & 닫기 버튼 -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-2 text-indigo-600">
+                    <i data-lucide="sliders" class="w-5 h-5"></i>
+                    <h2 class="font-bold text-slate-800 text-sm">사용자 프로필 설정 (State)</h2>
+                </div>
+                <button id="closeSidebarBtn" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- 사용자 ID -->
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700 flex items-center space-x-1">
+                    <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i>
+                    <span>사용자 ID (user_id)</span>
+                </label>
+                <input type="text" id="userIdInput" value="user_01" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <p class="text-[10px] text-slate-400">대화 히스토리 식별자입니다.</p>
+            </div>
+
+            <!-- 거주 지역 -->
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700 flex items-center space-x-1">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400"></i>
+                    <span>거주 지역 (area / location)</span>
+                </label>
+                <select id="locationInput" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="서울특별시" selected>서울특별시</option>
+                    <option value="경기도">경기도</option>
+                    <option value="인천광역시">인천광역시</option>
+                    <option value="부산광역시">부산광역시</option>
+                    <option value="전북특별자치도">전북특별자치도</option>
+                    <option value="전라남도">전라남도</option>
+                    <option value="경상북도">경상북도</option>
+                    <option value="경상남도">경상남도</option>
+                    <option value="충청북도">충청북도</option>
+                    <option value="충청남도">충청남도</option>
+                    <option value="강원특별자치도">강원특별자치도</option>
+                    <option value="제주특별자치도">제주특별자치도</option>
+                </select>
+            </div>
+
+            <!-- 만 나이 -->
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700 flex items-center space-x-1">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                    <span>만 나이 (age)</span>
+                </label>
+                <input type="number" id="ageInput" value="25" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <!-- 개인 상황 및 특이사항 -->
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700 flex items-center space-x-1">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i>
+                    <span>개인 상황 및 특이사항 (data)</span>
+                </label>
+                <textarea id="dataInput" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">구직 중인 취업 준비생, 월세 거주 중</textarea>
+                <p class="text-[10px] text-slate-400">프롬프트 개인 맞춤화 세부 정보로 사용됩니다.</p>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- 백엔드 API 주소 -->
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700 flex items-center space-x-1">
+                    <i data-lucide="server" class="w-3.5 h-3.5 text-slate-400"></i>
+                    <span>백엔드 API 주소</span>
+                </label>
+                <input type="text" id="apiUrlInput" value="http://127.0.0.1:8000/chat" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+        </div>
+
+        <!-- 하단 안내사항 박스 -->
+        <div class="p-4 m-3 bg-blue-50/80 border border-blue-100 rounded-xl flex-shrink-0">
+            <div class="flex items-start space-x-2">
+                <i data-lucide="info" class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
+                <div>
+                    <h4 class="text-xs font-bold text-blue-900 mb-0.5">안내사항</h4>
+                    <p class="text-[11px] text-blue-700 leading-relaxed">
+                        설정하신 프로필 조건은 RAG 메타데이터 필터링 및 프롬프트 생성 시 자동 전송됩니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 📌 우측 메인 영역 (전체 화면 차지) -->
+    <main class="flex-1 flex flex-col h-full w-full bg-slate-100 relative overflow-hidden">
+        <!-- 상단 헤더 -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shadow-sm flex-shrink-0">
+            <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                <!-- 사이드바 열기 버튼 -->
+                <button id="openSidebarBtn" class="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition flex-shrink-0" title="프로필 설정 열기">
+                    <i data-lucide="panel-left" class="w-5 h-5 text-indigo-600"></i>
+                </button>
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-100 flex-shrink-0">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center space-x-1.5 sm:space-x-2">
+                        <h1 class="font-bold text-slate-800 text-sm sm:text-base truncate">청년 정책 AI 어드바이저</h1>
+                        <span class="hidden sm:inline-block px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-full text-[10px] font-medium flex-shrink-0">LangGraph RAG</span>
+                    </div>
+                    <p class="text-[11px] sm:text-xs text-slate-400 truncate">맞춤형 지원금 및 복지 정책 다이어로그 시스템</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
+                <!-- 연결 모드 (Mock 스위치) -->
+                <div class="flex items-center space-x-1 sm:space-x-2 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                    <span class="text-[11px] sm:text-xs text-slate-500 font-medium pl-1 hidden sm:inline">연결:</span>
+                    <button id="mockToggleBtn" class="px-2.5 py-1 bg-emerald-500 text-white font-semibold text-[11px] sm:text-xs rounded-md shadow-sm transition">
+                        Mock (테스트)
+                    </button>
+                </div>
+
+                <!-- RAG & State 디버그 버튼 -->
+                <button id="toggleDebugBtn" class="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center space-x-1 transition">
+                    <i data-lucide="database" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                    <span class="hidden sm:inline">RAG & State 정보</span>
+                    <span class="sm:hidden">정보</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 대화 출력 영역 -->
+        <div id="chatContainer" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            <!-- AI 초기 인사 -->
+            <div class="flex items-start space-x-3">
+                <div class="w-9 h-9 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                    <i data-lucide="bot" class="w-5 h-5"></i>
+                </div>
+                <div class="space-y-1 min-w-0">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold text-xs text-slate-700">청년 정책 AI 어드바이저</span>
+                        <span class="text-[10px] text-slate-400">방금 전</span>
+                    </div>
+                    <div class="bg-white border border-slate-200/80 p-4 rounded-2xl rounded-tl-none shadow-sm max-w-xl text-slate-700 text-sm leading-relaxed">
+                        안녕하세요! 🥳 청년 복지 및 지원금 정책 맞춤형 AI 조력자입니다.<br>
+                        왼쪽 상단 프로필 버튼을 눌러 거주지역이나 나이를 변경할 수 있으며<br>
+                        사용자님의 정보를 자세히 써주셔야 원활한 안내가 가능하니 참고해주세요!<br>
+                        정보 예시 : 서울시 월세지원을 받고있는데 추가로 받을수 있을까?
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 영역 (추천 질문 & 입력창) -->
+        <div class="p-3 sm:p-4 bg-slate-100 border-t border-slate-200/60 flex-shrink-0 space-y-2.5">
+            <!-- 추천 질문 (가로 스크롤) -->
+            <div class="flex items-center space-x-2 overflow-x-auto max-w-5xl mx-auto px-1 scrollbar-none">
+                <span class="text-xs font-bold text-slate-400 flex items-center space-x-1 flex-shrink-0">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-500"></i>
+                    <span>추천:</span>
+                </span>
+                <button onclick="sendQuickPrompt('월세 지원 정책 조건')" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-xs text-slate-600 flex items-center space-x-1.5 shadow-sm transition whitespace-nowrap flex-shrink-0">
+                    <span>🏠 월세 지원 정책 조건</span>
+                </button>
+                <button onclick="sendQuickPrompt('취업 준비 수당')" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-xs text-slate-600 flex items-center space-x-1.5 shadow-sm transition whitespace-nowrap flex-shrink-0">
+                    <span>💼 취업 준비 수당</span>
+                </button>
+                <button onclick="sendQuickPrompt('청년 도약 계좌')" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-xs text-slate-600 flex items-center space-x-1.5 shadow-sm transition whitespace-nowrap flex-shrink-0">
+                    <span>💰 청년 도약 계좌</span>
+                </button>
+                <button onclick="sendQuickPrompt('교통비 지원 사업')" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-xs text-slate-600 flex items-center space-x-1.5 shadow-sm transition whitespace-nowrap flex-shrink-0">
+                    <span>🚌 교통비 지원 사업</span>
+                </button>
+            </div>
+
+            <!-- 입력 폼 -->
+            <form id="chatForm" class="max-w-5xl mx-auto relative flex items-center">
+                <input type="text" id="messageInput" placeholder="질문해 보세요... (예: 전세보증금 반환보증료 지원)" class="w-full pl-4 pr-12 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-800 placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button type="submit" id="sendBtn" class="absolute right-2 p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition flex items-center justify-center">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </form>
+
+            <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 max-w-5xl mx-auto px-2">
+                <span>LangGraph 파이프라인 답변 생성</span>
+                <span>REST API `POST /chat`</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- 우측 RAG & State 디버그 패널 -->
+    <aside id="debugPanel" class="fixed top-0 right-0 w-80 sm:w-96 bg-slate-900 border-l border-slate-800 flex flex-col hidden z-30 text-slate-200 h-full shadow-2xl">
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center space-x-2 text-indigo-400">
+                <i data-lucide="terminal" class="w-4 h-4"></i>
+                <h3 class="font-bold text-sm">RAG & State 디버거</h3>
+            </div>
+            <button id="closeDebugBtn" class="text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="p-4 flex-1 overflow-y-auto space-y-4 text-xs font-mono">
+            <div>
+                <span class="text-indigo-400 font-bold">// 전송 데이터 (State Payload)</span>
+                <pre id="debugState" class="mt-1.5 p-3 bg-slate-950 rounded-xl border border-slate-800 overflow-x-auto text-emerald-400 leading-relaxed">{}</pre>
+            </div>
+            <div>
+                <span class="text-amber-400 font-bold">// 검색된 Context (RAG Documents)</span>
+                <pre id="debugContext" class="mt-1.5 p-3 bg-slate-950 rounded-xl border border-slate-800 overflow-x-auto text-amber-300 leading-relaxed">[]</pre>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        lucide.createIcons();
+
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('messageInput');
+        const chatContainer = document.getElementById('chatContainer');
+        const toggleDebugBtn = document.getElementById('toggleDebugBtn');
+        const closeDebugBtn = document.getElementById('closeDebugBtn');
+        const debugPanel = document.getElementById('debugPanel');
+        const mockToggleBtn = document.getElementById('mockToggleBtn');
+        
+        // 사이드바 엘리먼트
+        const openSidebarBtn = document.getElementById('openSidebarBtn');
+        const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        let isMockMode = true;
+
+        // 💡 오버레이 슬라이더 열기/닫기 함수
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+            sidebarOverlay.classList.remove('hidden');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebarOverlay.classList.add('hidden');
+        }
+
+        openSidebarBtn.addEventListener('click', openSidebar);
+        closeSidebarBtn.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        mockToggleBtn.addEventListener('click', () => {
+            isMockMode = !isMockMode;
+            if (isMockMode) {
+                mockToggleBtn.textContent = 'Mock (테스트)';
+                mockToggleBtn.className = 'px-2.5 py-1 bg-emerald-500 text-white font-semibold text-[11px] sm:text-xs rounded-md shadow-sm transition';
+            } else {
+                mockToggleBtn.textContent = 'Live API 연동';
+                mockToggleBtn.className = 'px-2.5 py-1 bg-indigo-600 text-white font-semibold text-[11px] sm:text-xs rounded-md shadow-sm transition';
+            }
+        });
+
+        toggleDebugBtn.addEventListener('click', () => debugPanel.classList.toggle('hidden'));
+        closeDebugBtn.addEventListener('click', () => debugPanel.classList.add('hidden'));
+
+        function sendQuickPrompt(text) {
+            messageInput.value = text;
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const question = messageInput.value.trim();
+            if (!question) return;
+
+            const userId = document.getElementById('userIdInput').value;
+            const location = document.getElementById('locationInput').value;
+            const age = parseInt(document.getElementById('ageInput').value) || 0;
+            const data = document.getElementById('dataInput').value;
+            const apiUrl = document.getElementById('apiUrlInput').value;
+
+            appendMessage(question, 'user');
+            messageInput.value = '';
+
+            const reqPayload = { user_id: userId, query: question, age: age, area: location, data: data };
+            document.getElementById('debugState').textContent = JSON.stringify(reqPayload, null, 2);
+
+            const loadingId = appendLoadingMessage();
+
+            try {
+                let aiResponseText = "";
+                let retrievedDocs = [];
+
+                if (isMockMode) {
+                    await new Promise(r => setTimeout(r, 800));
+                    aiResponseText = `**[${location} 맞춤 정책 안내]**\n\n만 ${age}세 청년님을 위해 검색된 결과입니다.\n\n- **지원 내용**: 요청하신 "${question}" 관련 지원금을 신청하실 수 있습니다.\n- **신청 대상**: ${data}\n- **제출 서류**: 주민등록등본, 소득증빙서류`;
+                    retrievedDocs = [
+                        `[문서 1] ${location} 청년 월세 및 주거 지원 사업 안내`,
+                        `[문서 2] 만 ${age}세 이하 대상 청년 도약 수당 지원 기준`
+                    ];
+                } else {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(reqPayload)
+                    });
+
+                    if (!response.ok) throw new Error('백엔드 API 서버 연동에 실패했습니다.');
+                    const resData = await response.json();
+                    
+                    aiResponseText = resData.generation || resData.answer || resData.result || JSON.stringify(resData);
+                    retrievedDocs = resData.context || [];
+                }
+
+                removeLoadingMessage(loadingId);
+                appendMessage(aiResponseText, 'ai');
+                document.getElementById('debugContext').textContent = JSON.stringify(retrievedDocs, null, 2);
+
+            } catch (err) {
+                removeLoadingMessage(loadingId);
+                appendMessage(`⚠️ 오류 발생: ${err.message}\n백엔드 서버가 켜져 있는지 확인하거나 상단의 [Mock] 모드로 전환하세요.`, 'ai');
+                document.getElementById('debugContext').textContent = JSON.stringify({ error: err.message }, null, 2);
+            }
+        });
+
+        function appendMessage(text, sender) {
+            const isUser = sender === 'user';
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex items-start space-x-3 ${isUser ? 'justify-end' : ''}`;
+
+            if (!isUser) {
+                const avatar = document.createElement('div');
+                avatar.className = 'w-9 h-9 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-sm flex-shrink-0';
+                avatar.innerHTML = '<i data-lucide="bot" class="w-5 h-5"></i>';
+                wrapper.appendChild(avatar);
+            }
+
+            const messageBox = document.createElement('div');
+            messageBox.className = isUser ? 'text-right space-y-1' : 'space-y-1 min-w-0';
+
+            const timeStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            
+            const metaInfo = document.createElement('div');
+            metaInfo.className = 'flex items-center space-x-2 text-[10px] text-slate-400 ' + (isUser ? 'justify-end' : '');
+            metaInfo.innerHTML = isUser ? `<span>${timeStr}</span>` : `<span class="font-bold text-slate-700 text-xs">청년 정책 AI 어드바이저</span><span>${timeStr}</span>`;
+
+            const bubble = document.createElement('div');
+            bubble.className = `p-3.5 sm:p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${
+                isUser 
+                ? 'bg-indigo-600 text-white rounded-tr-none max-w-xs sm:max-w-md' 
+                : 'bg-white border border-slate-200/80 text-slate-700 rounded-tl-none max-w-md sm:max-w-xl'
+            }`;
+
+            if (isUser) {
+                bubble.textContent = text;
+            } else {
+                bubble.innerHTML = marked.parse(text);
+            }
+
+            messageBox.appendChild(metaInfo);
+            messageBox.appendChild(bubble);
+            wrapper.appendChild(messageBox);
+
+            chatContainer.appendChild(wrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            lucide.createIcons();
+        }
+
+        let loadingCounter = 0;
+        function appendLoadingMessage() {
+            const id = 'loading-' + (++loadingCounter);
+            const wrapper = document.createElement('div');
+            wrapper.id = id;
+            wrapper.className = 'flex items-start space-x-3';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'w-9 h-9 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-sm flex-shrink-0';
+            avatar.innerHTML = '<i data-lucide="bot" class="w-5 h-5"></i>';
+            wrapper.appendChild(avatar);
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bg-white border border-slate-200/80 p-4 rounded-2xl rounded-tl-none shadow-sm text-slate-400 text-sm italic animate-pulse';
+            bubble.textContent = 'LangGraph 파이프라인에서 정책을 분석 중입니다...';
+
+            wrapper.appendChild(bubble);
+            chatContainer.appendChild(wrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            lucide.createIcons();
+            return id;
+        }
+
+        function removeLoadingMessage(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+    </script>
+</body>
+</html>
