@@ -22,13 +22,13 @@ def region_condition(user_code):
         return condition[0]
     return {"$or": condition}
 
-def sido_code_from_text(text):
-    for short, full in SIDO_ALIAS.items():
-        if short in text:
-            for code, name in region_codes.items():
-                if name.startswith(full):
-                    return code[:2] + "000"
-    return None
+# def sido_code_from_text(text):
+#     for short, full in SIDO_ALIAS.items():
+#         if short in text:
+#             for code, name in region_codes.items():
+#                 if name.startswith(full):
+#                     return code[:2] + "000"
+#     return None
 
 def search_policies(query, age=None, user_region_code=None, top_k=3):
     condition = []
@@ -62,17 +62,18 @@ def show(results):
         print(f"{m['plcy_name']} | 나이 {m['min_age']}~{m['max_age']} | 참고 URL: {m["ref_url"]}\n 신청 URL: {m["apply_url"]}")
     print("-" * 20)
 
-if __name__ == "__main__":
-    # 1단계: 변환만 따로 확인
-    tests = [
-        "대구사는 20대중반 취업준비생입니다.",
-        "서울에 살고 있어요",
-        "광주에 살아요",
-        "전남 영암에 살아요",
-        "미국에 살아요",
-    ]
-    for t in tests:
-        print(t, "→", sido_code_from_text(t))
-
-    r = search_policies("대구 청년 취업 지원", age=25, user_region_code="27000")
-    print(len(r), [d.metadata["plcy_name"] for d in r])
+# test
+# if __name__ == "__main__":
+#     # 1단계: 변환만 따로 확인
+#     tests = [
+#         "대구사는 20대중반 취업준비생입니다.",
+#         "서울에 살고 있어요",
+#         "광주에 살아요",
+#         "전남 영암에 살아요",
+#         "미국에 살아요",
+#     ]
+#     for t in tests:
+#         print(t, "→", sido_code_from_text(t))
+#
+#     r = search_policies("대구 청년 취업 지원", age=25, user_region_code="27000")
+#     print(len(r), [d.metadata["plcy_name"] for d in r])
