@@ -1,5 +1,6 @@
 # scheduler.py
 import os
+import subprocess
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -9,14 +10,32 @@ LOG_FILE = "./store/last_update.txt"
 async def task1(msg: str):
     print(f"[{datetime.now()}] 작업 실행 중: {msg}")
     
-    # TODO: 팀원이 만든 파이프라인 함수 연결
-    # raw_data = fetch_api_data()
-    # cleaned_data = clean_data(raw_data)
-    # insert_to_db(cleaned_data)
+    try:
+        # 1단계-1: 정책 데이터 API 호출 및 raw_json 생성
+        print("--- 1. 정책 API 수집 시작 ---")
+        subprocess.run(["python", "call_policies_api.py"], check=True)
 
-    # call_policies_api
-    # call_region_api
-    # build_region_codes
+        # 1단계-2: 지역 코드 API 호출 및 json 생성 (필요시 주기적 실행)
+        print("--- 2. 지역 코드 수집 시작 ---")
+        subprocess.run(["python", "build_region_codes.py"], check=True)
+
+        # 2단계: 데이터 전처리 (clean_json 생성)
+        print("--- 3. 데이터 전처리 시작 ---")
+        subprocess.run(["python", "data_preprocess.py"], check=True)
+
+        # 3단계: 벡터 DB 적재 (ChromaDB 업데이트)
+        print("--- 4. 벡터 DB 적재 시작 ---")
+        subprocess.run(["python", "build_db.py"], check=True)
+
+        # 업데이트 날짜 기록
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+        with open(LOG_FILE, "w", encoding="utf-8") as f:
+            f.write(today_str)
+        print(f"[{datetime.now()}] 데이터 업데이트 및 기록 완료 ({today_str})")
+
+    except subprocess.CalledProcessError as e:
+        print(f"[오류 발생] 스케줄러 파이프라인 실행 중 에러가 발생했습니다: {e}")
     
     today_str = datetime.now().strftime("%Y-%m-%d")
     os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)

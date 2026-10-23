@@ -1,0 +1,39 @@
+# 디폴트 무시된 파일
+/shelf/
+/workspace.xml
+# 에디터 기반 HTTP 클라이언트 요청
+/httpRequests/
+
+/*
+!.gitignore
+
+# --- 파이썬 캐시 및 컴파일 파일 ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- 가상환경 ---
+.venv/
+venv/
+ENV/
+
+# --- IDE 및 에디터 설정 (PyCharm, VS Code 등) ---
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- 환경변수 및 개인정보 설정 파일 ---
+.env
+
+# --- 데이터베이스 및 로컬 스토리지 (대화 기록, Chroma DB 등) ---
+*.db
+*.sqlite3
+store/
+!store/.gitkeep
+
+# --- OS 생성 파일 ---
+.DS_Store
+Thumbs.db
+
+임시/

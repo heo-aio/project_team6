@@ -7,6 +7,8 @@ import chromadb
 from prompts2 import State, PromptManager
 from llm_config import init_llm_settings
 from db_history import get_recent_history
+from data.region import get_region_code
+from data.search import search_policies
 
 # 1. LLM 및 임베딩 전역 초기화
 llm, embed_model = init_llm_settings()
@@ -21,12 +23,23 @@ def retrieve_node(state: State) -> dict:
     location = state.get("location", "")
     age = state.get("age", None)
     
-    embed_fn = OllamaEmbeddings(base_url="http://localhost:11434", model="bge-m3:latest")
-    client = chromadb.PersistentClient(path="./store")
-    vectorstore = Chroma(client=client, collection_name="policies_data", embedding_function=embed_fn)
-    
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
-    docs = retriever.invoke(f"{state.get('location')} 청년 정책 {state.get('question')}")
+    # 1. 지역 이름(시도, 시군구)을 search.py가 이해하는 행정구역 코드로 변환
+    region_code = None
+    if location and isinstance(location, str):
+        parts = location.strip().split()
+        if len(parts) >= 2:
+            region_code = get_region_code(parts[0], parts[1])
+        elif len(parts) == 1:
+            # 시도만 들어온 경우 등 필요에 따라 처리 가능
+            pass
+
+    # 2. search.py에 정의된 정식 검색 함수 호출 (메타데이터 필터 + 시맨틱 검색)
+    docs = search_policies(
+        query=question,
+        age=age,
+        user_region_code=region_code,
+        top_k=2  # 필요한 문서 개수
+    )
     
     retrieved_context = [doc.page_content for doc in docs]
     
@@ -69,8 +82,7 @@ def generate_node(state: State) -> dict:
 
         [출력 규칙]
         - 답변은 반드시 자연스러운 한국어로만 작성하세요.
-        - 중국어, 영어 등 다른 언어를 절대 섞어서 출력하지 마세요.
-        - 이전 대화 내용이 있다면 그 맥락을 이어서 답변하세요.
+        - 중국어, 영어 등 다른 언어를 절대 출력하지 마세요.
         - 역슬래시 n(\\n) 문자를 텍스트에 직접 쓰지 말고 실제 엔터(줄바꿈)를 치세요.
         - 똑같은 인사말이나 문장을 여러 번 반복하지 마세요.
         - 이전 대화기록이 필요한 경우 적극적으로 활용하세요.

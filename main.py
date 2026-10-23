@@ -24,6 +24,8 @@ class ChatRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global scheduler
+
+    init_db()
     
     # 서버 켜질 때 부팅 체크 실행
     await check_and_run_on_startup()

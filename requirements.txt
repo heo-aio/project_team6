@@ -12,7 +12,7 @@ langgraph
 
 #fastapi
 fastapi
-
+apscheduler
 uvicorn
 
 llama-index
