@@ -50,4 +50,6 @@ def get_recent_history(user_id: str, limit: int = 6) -> str:
     for role, msg in rows:
         prefix = "사용자" if role == "user" else "AI"
         history_str += f"{prefix}: {msg}\n"
+
     return history_str
+
