@@ -37,3 +37,4 @@ store/
 Thumbs.db
 
 임시/
+!data/
