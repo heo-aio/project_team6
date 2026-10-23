@@ -7,7 +7,7 @@ import chromadb
 from prompts2 import State, PromptManager
 from llm_config import init_llm_settings
 from db_history import get_recent_history
-from data.region import get_region_code
+from data.region import get_region_code, get_sido_code
 from data.search import search_policies
 
 # 1. LLM 및 임베딩 전역 초기화
@@ -42,12 +42,11 @@ def retrieve_node(state: State) -> dict:
     # 1. 지역 이름(시도, 시군구)을 search.py가 이해하는 행정구역 코드로 변환
     region_code = None
     if location and isinstance(location, str):
-        parts = location.strip().split()
-        if len(parts) >= 2:
+        parts = location.strip().split(" ", 1)
+        if len(parts) == 2:
             region_code = get_region_code(parts[0], parts[1])
-        elif len(parts) == 1:
-            # 시도만 들어온 경우 등 필요에 따라 처리 가능
-            pass
+        else:
+            region_code = get_sido_code(parts[0])
 
     # 2. search.py에 정의된 정식 검색 함수 호출 (메타데이터 필터 + 시맨틱 검색)
     docs = search_policies(
