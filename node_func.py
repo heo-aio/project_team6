@@ -13,6 +13,22 @@ from data.search import search_policies
 # 1. LLM 및 임베딩 전역 초기화
 llm, embed_model = init_llm_settings()
 
+def format_doc(doc) -> str:
+    """검색된 정책 문서를 LLM에 넘길 텍스트로 만든다 (본문 + 연령/기간/링크)"""
+    m = doc.metadata
+    if m.get("min_age", 0) == 0 and m.get("max_age", 999) == 999:
+        age_text = "제한 없음"
+    else:
+        age_text = f"{m.get('min_age', 0)}~{m.get('max_age', 999)}세"
+
+    return (
+        f"{doc.page_content}\n"
+        f"지원 연령: {age_text}\n"
+        f"신청 기간: {m.get('apply_period') or '정보 없음'}\n"
+        f"신청 링크: {m.get('apply_url') or '정보 없음'}\n"
+        f"참고 링크: {m.get('ref_url') or '정보 없음'}"
+    )
+
 def retrieve_node(state: State) -> dict:
     """
     [노드 1] RAG 문서 검색 노드
@@ -41,7 +57,7 @@ def retrieve_node(state: State) -> dict:
         top_k=2  # 필요한 문서 개수
     )
     
-    retrieved_context = [doc.page_content for doc in docs]
+    retrieved_context = [format_doc(doc) for doc in docs]
     
     # GraphState의 context 필드 갱신
     return {"context": retrieved_context}
