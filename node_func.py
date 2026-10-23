@@ -76,7 +76,7 @@ def generate_node(state: State) -> dict:
         query_str=question
     )
 
-    final_prompt += """
+    final_prompt += f"""
         [이전 대화 기록]
         {chat_history}
 
@@ -86,12 +86,13 @@ def generate_node(state: State) -> dict:
         - 역슬래시 n(\\n) 문자를 텍스트에 직접 쓰지 말고 실제 엔터(줄바꿈)를 치세요.
         - 똑같은 인사말이나 문장을 여러 번 반복하지 마세요.
         - 이전 대화기록이 필요한 경우 적극적으로 활용하세요.
+        - 이전 대화기록을 묻거나 정책 정보가 없이도 대답할수있는 간단한 답변의 경우 정책정보를 활용하지 마세요
         
         \n\n[AI 답변]: 
     """
 
     #print("=== [DEBUG] Final Prompt ===")
-    #print(final_prompt)
+    print(final_prompt)
     #print("============================")
 
     """
