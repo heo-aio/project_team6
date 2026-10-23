@@ -3,6 +3,13 @@ import json
 with open("region_codes.json", "r", encoding="utf-8") as f:
     region_codes = json.load(f)
 
+def get_sido_code(sido):
+    """'대구광역시' -> '27000' (시도 단위 코드). 없으면 None"""
+    for code, name in region_codes.items():
+        if name.startswith(sido + " "):
+            return code[:2] + "000"
+    return None
+
 def get_sido_list():
     """시도 이름 목록 (중복 없이, 등장 순서 유지)"""
     sidos = []
@@ -11,16 +18,6 @@ def get_sido_list():
         if sido not in sidos:
             sidos.append(sido)
     return sidos
-
-
-def get_sigungu_list(sido):
-    """해당 시도의 시군구 이름 목록"""
-    result = []
-    for name in region_codes.values():
-        parts = name.split(" ", 1)
-        if parts[0] == sido and len(parts) == 2:
-            result.append(parts[1])
-    return result
 
 
 def get_region_code(sido, sigungu):
