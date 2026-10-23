@@ -37,17 +37,19 @@ def search_policies(query, age=None, user_region_code=None, top_k=3):
 
     return vectorstore.similarity_search(query, k=top_k, filter=where)
 
+
+
+# 테스트
 def show(results):
     for doc in results:
         m = doc.metadata
         if m["ref_url"] == "":
             m["ref_url"] = "없음"
         if m["apply_url"] == "":
-            m["ref_url"] = "공백"
+            m["apply_url"] = "공백"
         print(f"{m['plcy_name']} | 나이 {m['min_age']}~{m['max_age']} | 참고 URL: {m["ref_url"]}\n 신청 URL: {m["apply_url"]}")
     print("-" * 20)
 
-# 테스트
 if __name__ == "__main__":
     show(search_policies("청년농업인 교육", 32, "47840")) # 둘 다
     show(search_policies("청년농업인 교육", age=15))            # ② 나이만
