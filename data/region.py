@@ -1,6 +1,10 @@
 import json
+import os
 
-with open("region_codes.json", "r", encoding="utf-8") as f:
+current_dir = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(current_dir, "region_codes.json")
+
+with open(json_path, "r", encoding="utf-8") as f:
     region_codes = json.load(f)
 
 def get_sido_code(sido):

@@ -1,5 +1,5 @@
-from vector_store import get_vectorstore
-from region import region_codes, SIDO_ALIAS
+from .vector_store import get_vectorstore
+from .region import region_codes
 
 vectorstore = get_vectorstore()
 
